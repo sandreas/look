@@ -1,0 +1,46 @@
+project_name: look
+release:
+  github:
+    owner: sandreas
+    name: look
+brew:
+  install: bin.install "look"
+builds:
+  - goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - 6
+      - 7
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: linux
+        goarch: arm
+        goarm: 7
+    main: cmd/look/main.go
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    binary: look
+archive:
+  format: tar.gz
+  name_template: '{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{
+    .Arm }}{{ end }}'
+  files:
+    - LICENCE*
+    - README*
+    - CHANGELOG*
+  format_overrides:
+    - goos: windows
+      format: zip
+  replacements:
+    amd64: 64bit
+    darwin: macOS
+snapshot:
+  name_template: SNAPSHOT-{{ .Commit }}
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_sha256_checksums.txt'
