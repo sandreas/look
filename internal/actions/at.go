@@ -33,7 +33,7 @@ func (action *At) Execute(c *cli.Context) error {
 	lastArg := ""
 	var reader *bufio.Reader
 	if argsLen > 0 {
-		lastArg = c.Args().Slice()[argsLen-1]
+		lastArg = c.Args().First()
 		input, err := os.OpenFile(lastArg, os.O_RDONLY, 0755)
 
 		if err != nil {
@@ -76,7 +76,7 @@ func (action *At) Execute(c *cli.Context) error {
 		maxLines = 0
 	}
 
-	var lineBuffer = make([][]byte, maxLines)
+	var lineBuffer = make([][]byte, 0)
 OuterLoop:
 	for {
 		line, _, err := reader.ReadLine()
