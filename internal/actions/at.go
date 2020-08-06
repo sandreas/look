@@ -76,7 +76,8 @@ func (action *At) Execute(c *cli.Context) error {
 		maxLines = 0
 	}
 
-	var lineBuffer = make([][]byte, 0)
+	// var lineBuffer = make([][]byte, 0)
+	var lineBuffer []string
 OuterLoop:
 	for {
 		line, _, err := reader.ReadLine()
@@ -108,25 +109,29 @@ OuterLoop:
 		}
 
 		if maxLines == 0 {
-			flushLine(line)
+			flushLine(string(line))
 		} else {
 			length := len(lineBuffer)
 			if length == maxLines {
 				lineBuffer = lineBuffer[1:]
 			}
-			lineBuffer = append(lineBuffer, line)
+			lineBuffer = append(lineBuffer, string(line))
+			flushLine(string(line))
+			println("-----------------")
+			flushLineBuffer(lineBuffer)
+			println("===================")
 		}
 	}
 
 	return nil
 }
 
-func flushLineBuffer(lineBuffer [][]byte) {
+func flushLineBuffer(lineBuffer []string) {
 	for _, line := range lineBuffer {
 		flushLine(line)
 	}
 }
 
-func flushLine(line []byte) {
-	println(string(line))
+func flushLine(line string) {
+	println(line)
 }
