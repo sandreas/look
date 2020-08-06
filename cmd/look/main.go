@@ -20,10 +20,13 @@ func main() {
 		// &cli.StringFlag{Name: "include-media-types", Value: "image,video", Usage: "media types to include"},
 
 		&cli.StringSliceFlag{
-			Name:    actions.FlagFilter,
+			Name:    actions.FlagExpression, // todo rename to pattern?
 			Aliases: []string{"e"},
 		},
-
+		&cli.StringSliceFlag{
+			Name:    actions.FlagReplacements,
+			Aliases: []string{"r"},
+		},
 		&cli.BoolFlag{
 			Name:    actions.FlagWatch,
 			Aliases: []string{"w"},

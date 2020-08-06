@@ -11,9 +11,10 @@ import (
 	"time"
 )
 
-const FlagFilter = "expression"
+const FlagExpression = "expression"
 const FlagWatch = "watch"
 const FlagLineCount = "lines"
+const FlagReplacements = "replacements"
 
 type At struct {
 }
@@ -22,6 +23,11 @@ func (action *At) Execute(c *cli.Context) error {
 	settings := parseActionParams(c)
 	initLogging(settings)
 	defer log.Flush()
+
+	// todo https://godoc.org/github.com/yalp/jsonpath
+
+	maxLines := c.Int(FlagLineCount)
+	shouldWatchFile := c.Bool(FlagWatch)
 
 	argsLen := c.Args().Len()
 	lastArg := ""
@@ -37,6 +43,7 @@ func (action *At) Execute(c *cli.Context) error {
 		reader = bufio.NewReader(input)
 	} else {
 		stat, _ := os.Stdin.Stat()
+		shouldWatchFile = false
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
 			reader = bufio.NewReader(os.Stdin)
 		} else {
@@ -45,12 +52,17 @@ func (action *At) Execute(c *cli.Context) error {
 		}
 	}
 
-	// file reader
-	// os.Stdin reader
-
 	var matchers []*regexp.Regexp
-	filters := c.StringSlice(FlagFilter)
-	for _, f := range filters {
+	expressions := c.StringSlice(FlagExpression)
+
+	replacements := c.StringSlice(FlagReplacements)
+	replacementsLen := len(replacements)
+	if replacementsLen > 0 && replacementsLen != len(expressions) {
+		log.Warn("replacements must have the same count as expressions")
+		return errors.New("replacements must have the same count as expressions")
+	}
+
+	for _, f := range expressions {
 		re1, err := regexp.Compile(f)
 		if err != nil {
 			log.Warn("Invalid regex", f)
@@ -60,13 +72,11 @@ func (action *At) Execute(c *cli.Context) error {
 		matchers = append(matchers, re1)
 	}
 
-	maxLines := c.Int(FlagLineCount)
 	if maxLines < 0 {
 		maxLines = 0
 	}
 
 	var lineBuffer = make([][]byte, maxLines)
-	shouldWatchFile := c.Bool(FlagWatch)
 OuterLoop:
 	for {
 		line, _, err := reader.ReadLine()
@@ -86,9 +96,14 @@ OuterLoop:
 			return err
 		}
 
-		for _, m := range matchers {
+		for i, m := range matchers {
 			if !m.Match(line) {
 				continue OuterLoop
+			}
+
+			if replacementsLen > 0 {
+				replacement := replacements[i]
+				line = m.ReplaceAll(line, []byte(replacement))
 			}
 		}
 
