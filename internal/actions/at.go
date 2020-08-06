@@ -116,10 +116,10 @@ OuterLoop:
 				lineBuffer = lineBuffer[1:]
 			}
 			lineBuffer = append(lineBuffer, string(line))
-			flushLine(string(line))
-			println("-----------------")
-			flushLineBuffer(lineBuffer)
-			println("===================")
+			//flushLine(string(line))
+			//println("-----------------")
+			//flushLineBuffer(lineBuffer)
+			//println("===================")
 		}
 	}
 
