@@ -3,6 +3,7 @@ package actions
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"github.com/sandreas/log"
 	"github.com/urfave/cli"
 	"io"
@@ -133,5 +134,5 @@ func flushLineBuffer(lineBuffer []string) {
 }
 
 func flushLine(line string) {
-	println(line)
+	_, _ = os.Stdout.WriteString(fmt.Sprintln(line))
 }
