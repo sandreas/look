@@ -8,7 +8,12 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"time"
 )
+
+const FlagFilter = "expression"
+const FlagWatch = "watch"
+const FlagLineCount = "lines"
 
 type At struct {
 }
@@ -18,11 +23,11 @@ func (action *At) Execute(c *cli.Context) error {
 	initLogging(settings)
 	defer log.Flush()
 
-	len := c.Args().Len()
+	argsLen := c.Args().Len()
 	lastArg := ""
 	var reader *bufio.Reader
-	if len > 0 {
-		lastArg = c.Args().Slice()[len-1]
+	if argsLen > 0 {
+		lastArg = c.Args().Slice()[argsLen-1]
 		input, err := os.OpenFile(lastArg, os.O_RDONLY, 0755)
 
 		if err != nil {
@@ -35,8 +40,8 @@ func (action *At) Execute(c *cli.Context) error {
 		if (stat.Mode() & os.ModeCharDevice) == 0 {
 			reader = bufio.NewReader(os.Stdin)
 		} else {
-			log.Warn("Either a file or stdin has to be provided")
-			return errors.New("Either a file or stdin has to be provided")
+			log.Warn("either a file or stdin has to be provided")
+			return errors.New("either a file or stdin has to be provided")
 		}
 	}
 
@@ -44,7 +49,7 @@ func (action *At) Execute(c *cli.Context) error {
 	// os.Stdin reader
 
 	var matchers []*regexp.Regexp
-	filters := c.StringSlice("filter")
+	filters := c.StringSlice(FlagFilter)
 	for _, f := range filters {
 		re1, err := regexp.Compile(f)
 		if err != nil {
@@ -55,28 +60,58 @@ func (action *At) Execute(c *cli.Context) error {
 		matchers = append(matchers, re1)
 	}
 
+	maxLines := c.Int(FlagLineCount)
+	if maxLines < 0 {
+		maxLines = 0
+	}
+
+	var lineBuffer = make([][]byte, maxLines)
+	shouldWatchFile := c.Bool(FlagWatch)
+OuterLoop:
 	for {
 		line, _, err := reader.ReadLine()
 		if err != nil {
 			if err == io.EOF {
+				if maxLines != 0 {
+					flushLineBuffer(lineBuffer)
+					lineBuffer = lineBuffer[:0]
+				}
+				if shouldWatchFile {
+					time.Sleep(2 * time.Second)
+					continue OuterLoop
+				}
 				break
 			}
 			log.Warn("Could not read line")
 			return err
 		}
 
-		skipLine := false
 		for _, m := range matchers {
 			if !m.Match(line) {
-				skipLine = true
-				break
+				continue OuterLoop
 			}
 		}
-		if skipLine {
-			continue
+
+		if maxLines == 0 {
+			flushLine(line)
+		} else {
+			length := len(lineBuffer)
+			if length == maxLines {
+				lineBuffer = lineBuffer[1:]
+			}
+			lineBuffer = append(lineBuffer, line)
 		}
-		println(string(line))
 	}
 
 	return nil
+}
+
+func flushLineBuffer(lineBuffer [][]byte) {
+	for _, line := range lineBuffer {
+		flushLine(line)
+	}
+}
+
+func flushLine(line []byte) {
+	println(string(line))
 }
