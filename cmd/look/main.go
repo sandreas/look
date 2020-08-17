@@ -14,22 +14,32 @@ func main() {
 		&cli.BoolFlag{Name: "debug", Usage: "debug mode with logging to Stdout and into $HOME/.graft/application.log"},
 	}
 
-	atFlags := []cli.Flag{
+	textActionFlags := []cli.Flag{
 		// &cli.BoolFlag{Name: "keep-duplicates", Usage: "keep duplicate files"},
 		// &cli.StringFlag{Name: "tpl", Usage: "filename template"},
 		// &cli.StringFlag{Name: "include-media-types", Value: "image,video", Usage: "media types to include"},
 
 		&cli.StringSliceFlag{
-			Name:    actions.FlagExpression, // todo rename to pattern?
-			Aliases: []string{"e"},
+			Name:    actions.FlagQueryWhere,
+			Aliases: []string{"w"},
+		},
+
+		&cli.StringSliceFlag{
+			Name:    actions.FlagQueryWhereNot,
+			Aliases: []string{"W"},
+		},
+
+		&cli.StringSliceFlag{
+			Name:    actions.FlagPattern,
+			Aliases: []string{"p"},
 		},
 		&cli.StringSliceFlag{
-			Name:    actions.FlagReplacements,
+			Name:    actions.FlagReplacement,
 			Aliases: []string{"r"},
 		},
 		&cli.BoolFlag{
-			Name:    actions.FlagWatch,
-			Aliases: []string{"w"},
+			Name: actions.FlagWatch,
+			//Aliases: []string{},
 		},
 
 		&cli.IntFlag{
@@ -45,11 +55,11 @@ func main() {
 
 	app.Commands = []*cli.Command{
 		{
-			Name:    "at",
+			Name:    "text",
 			Aliases: []string{"a"},
-			Action:  new(actions.At).Execute,
-			Usage:   "look at file",
-			Flags:   mergeFlags(globalFlags, atFlags),
+			Action:  new(actions.Text).Execute,
+			Usage:   "look at file with text lines",
+			Flags:   mergeFlags(globalFlags, textActionFlags),
 		},
 	}
 
