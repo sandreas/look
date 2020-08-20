@@ -115,7 +115,7 @@ OuterLoop:
 			if err == nil {
 				size := stat.Size()
 				if size < inputLastSize {
-					reader.Reset(reader)
+					reader = bufio.NewReader(input)
 				}
 				inputLastSize = size
 			}
