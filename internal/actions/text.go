@@ -106,9 +106,20 @@ func (action *Text) Execute(c *cli.Context) error {
 	}
 
 	// var lineBuffer = make([][]byte, 0)
-	var lineBuffer []string
+	var lineBuffer = make([]string, 0)
+	inputLastSize := int64(0)
 OuterLoop:
 	for {
+		if input != nil {
+			stat, err := input.Stat()
+			if err == nil {
+				size := stat.Size()
+				if size < inputLastSize {
+					reader.Reset(reader)
+				}
+				inputLastSize = size
+			}
+		}
 		line, _, err := reader.ReadLine()
 		if err != nil {
 			if err == io.EOF {
@@ -118,7 +129,7 @@ OuterLoop:
 				}
 				if shouldWatchFile {
 
-					time.Sleep(2 * time.Second)
+					time.Sleep(250 * time.Millisecond)
 					continue OuterLoop
 				}
 				break
