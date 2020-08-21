@@ -15,3 +15,4 @@
 # vendor/
 /look.iml
 /dist
+/.ghtoken
